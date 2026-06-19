@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="選曲">
+<title>選曲ランチャー｜四宮邸大雅</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-dashed: rgba(0,0,0,0.18);
+    --text-primary: #1a1a1a;
+    --text-secondary: #666;
+    --text-hint: #999;
+    --accent: #534AB7;
+    --accent-light: #EEEDFE;
+    --accent-text: #3C3489;
+    --tab-active-bg: #534AB7;
+    --tab-active-text: #EEEDFE;
+    --radio-bg: #E1F5EE;
+    --enka-bg: #FAECE7;
+    --bgm-bg: #E6F1FB;
+    --danger: #E24B4A;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+    color: var(--text-primary);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 80px;
+    min-height: 100%;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .edit-btn {
+    font-size: 14px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* タブ */
+  .tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 4px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s;
+    -webkit-appearance: none;
+  }
+  .tab.active {
+    background: var(--tab-active-bg);
+    color: var(--tab-active-text);
+    border-color: var(--tab-active-bg);
+  }
+
+  /* 曲リスト */
+  .songs {
+    padding: 12px 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .song-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.1s;
+    -webkit-touch-callout: none;
+  }
+  .song-card:active { opacity: 0.6; }
+
+  .song-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .icon-radio { background: var(--radio-bg); }
+  .icon-enka  { background: var(--enka-bg); }
+  .icon-bgm   { background: var(--bgm-bg); }
+
+  .song-info { flex: 1; min-width: 0; }
+  .song-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .song-arrow {
+    color: var(--text-hint);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* 編集モード */
+  .song-card.edit-mode { cursor: default; }
+  .delete-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: white;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .url-btn {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: none;
+    border-radius: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* 追加ボタン */
+  .add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 12px 0;
+    padding: 14px;
+    background: var(--surface);
+    border: 0.5px dashed var(--border-dashed);
+    border-radius: 14px;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    width: calc(100% - 24px);
+    -webkit-appearance: none;
+  }
+
+  /* 空状態 */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-hint);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  /* モーダル */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 28px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border-dashed);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .modal h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+  }
+  .modal label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .modal input,
+  .modal select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text-primary);
+    margin-bottom: 14px;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
+  .modal input:focus,
+  .modal select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .btn-cancel {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 0.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+  }
+  .btn-save {
+    flex: 2;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-family: inherit;
+  }
+
+  /* データ書き出し・読み込み */
+  .data-btns {
+    display: flex;
+    gap: 8px;
+    margin: 16px 12px 0;
+  }
+  .data-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 8px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: center;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
+
+  /* フッター */
+  .footer {
+    text-align: center;
+    padding: 24px 16px 8px;
+    font-size: 11px;
+    color: var(--text-hint);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <h1>🎵 選曲ランチャー</h1>
+      <button class="edit-btn" id="edit-toggle" onclick="toggleEdit()">編集</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tab-radio"   onclick="switchTab('radio')">ラジオ体操</button>
+      <button class="tab"        id="tab-karaoke" onclick="switchTab('karaoke')">カラオケ</button>
+      <button class="tab"        id="tab-bgm"     onclick="switchTab('bgm')">BGM・その他</button>
+    </div>
+  </div>
+
+  <div id="song-list" class="songs"></div>
+
+  <button class="add-btn" onclick="openModal()">＋ 曲を追加する</button>
+
+  <div class="data-btns">
+    <button class="data-btn" onclick="openExportModal()">📤 データを書き出す</button>
+    <button class="data-btn" onclick="openImportModal()">📥 データを読み込む</button>
+  </div>
+  <div class="footer">四宮邸大雅｜登録した曲はこの端末に保存されます</div>
+</div>
+
+<!-- 書き出しモーダル -->
+<div class="modal-bg" id="export-modal" onclick="if(event.target===this)closeExportModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>データを書き出す</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">下のテキストをすべて選択してコピーし、メモ帳などに保存してください。</p>
+    <textarea id="export-text" readonly style="width:100%;height:140px;font-size:11px;padding:10px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text-primary);font-family:monospace;resize:none;"></textarea>
+    <div class="modal-btns" style="margin-top:12px;">
+      <button class="btn-cancel" onclick="closeExportModal()">閉じる</button>
+      <button class="btn-save" onclick="copyToClipboard()">コピーする</button>
+    </div>
+  </div>
+</div>
+
+<!-- 読み込みモーダル -->
+<div class="modal-bg" id="import-modal" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>データを読み込む</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">保存したテキストを下に貼り付けてください。</p>
+    <textarea id="import-text" style="width:100%;height:140px;font-size:11px;padding:10px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text-primary);font-family:monospace;resize:none;" placeholder="ここに貼り付け..."></textarea>
+    <div class="modal-btns" style="margin-top:12px;">
+      <button class="btn-cancel" onclick="closeImportModal()">キャンセル</button>
+      <button class="btn-save" onclick="importFromText()">読み込む</button>
+    </div>
+  </div>
+</div>
+
+<!-- URL変更モーダル -->
+<div class="modal-bg" id="url-modal" onclick="handleUrlModalBgClick(event)">
+  <div class="modal" id="url-modal-inner">
+    <div class="modal-handle"></div>
+    <h2>URLを変更する</h2>
+    <div id="url-song-name" style="font-size:14px; color:var(--text-secondary); margin-bottom:16px;"></div>
+    <label>新しい YouTube URL</label>
+    <input type="url" id="u-url" placeholder="https://www.youtube.com/watch?v=...">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeUrlModal()">キャンセル</button>
+      <button class="btn-save"   onclick="saveUrl()">変更する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 追加モーダル -->
+<div class="modal-bg" id="modal" onclick="handleModalBgClick(event)">
+  <div class="modal" id="modal-inner">
+    <div class="modal-handle"></div>
+    <h2>曲を追加する</h2>
+    <label>カテゴリ</label>
+    <select id="m-cat">
+      <option value="radio">ラジオ体操</option>
+      <option value="karaoke">カラオケ（歌謡・演歌・唱歌）</option>
+      <option value="bgm">BGM・その他</option>
+    </select>
+    <label>曲名</label>
+    <input type="text" id="m-title" placeholder="例：上を向いて歩こう">
+    <label>アーティスト・説明（任意）</label>
+    <input type="text" id="m-sub" placeholder="例：坂本九">
+    <label>YouTube URL</label>
+    <input type="url" id="m-url" placeholder="https://www.youtube.com/watch?v=...">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save"   onclick="saveSong()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {
+  radio: [
+    { title: "ラジオ体操 第一",   sub: "かんぽ生命公式・実演", url: "https://www.youtube.com/watch?v=_YZZfaMGEOU", icon: "🌅" },
+    { title: "ラジオ体操 第二",   sub: "かんぽ生命公式・実演", url: "https://www.youtube.com/watch?v=yi1TbzML2cU", icon: "🌅" },
+    { title: "ラジオ体操 第一（通し）", sub: "ラジオ体操アプリ公式", url: "https://www.youtube.com/watch?v=q91wVnUGcnk", icon: "🪑" }
+  ],
+  karaoke: [
+    { title: "上を向いて歩こう", sub: "坂本九",   url: "https://www.youtube.com/watch?v=S_J5rMaA_R8", icon: "🎤" },
+    { title: "川の流れのように", sub: "美空ひばり", url: "https://www.youtube.com/watch?v=Yv9D2BQNB0c", icon: "🎤" },
+    { title: "365歩のマーチ",   sub: "水前寺清子", url: "https://www.youtube.com/watch?v=KTw7sEH9_CE", icon: "🎶" },
+    { title: "ふるさと",         sub: "唱歌",      url: "https://www.youtube.com/watch?v=P-3GOo_nWoc", icon: "🌸" },
+    { title: "炭坑節",           sub: "民謡・盆踊り", url: "https://www.youtube.com/watch?v=E8M_MF5VRLQ", icon: "🎶" }
+  ],
+  bgm: [
+    { title: "春の小川",    sub: "唱歌・BGM",   url: "https://www.youtube.com/watch?v=bHBEBT6X8UE", icon: "🌿" },
+    { title: "童謡メドレー", sub: "懐かしい曲集", url: "https://www.youtube.com/watch?v=0RKnqNGPF7c", icon: "🎵" }
+  ]
+};
+
+let data = JSON.parse(localStorage.getItem('launcher_v1') || 'null') || DEFAULTS;
+let currentTab = 'radio';
+let editMode = false;
+
+function save() {
+  localStorage.setItem('launcher_v1', JSON.stringify(data));
+}
+
+function iconClass(cat) {
+  if (cat === 'radio')   return 'icon-radio';
+  if (cat === 'karaoke') return 'icon-enka';
+  return 'icon-bgm';
+}
+
+function render() {
+  const list = document.getElementById('song-list');
+  const songs = data[currentTab] || [];
+  if (songs.length === 0) {
+    list.innerHTML = '<div class="empty">曲が登録されていません<br>「曲を追加する」から登録してください</div>';
+    return;
+  }
+  list.innerHTML = songs.map((s, i) => {
+    if (editMode) {
+      return `<div class="song-card edit-mode">
+        <button class="delete-btn" onclick="deleteSong(${i})" aria-label="${s.title}を削除">−</button>
+        <div class="song-icon ${iconClass(currentTab)}">${s.icon}</div>
+        <div class="song-info">
+          <div class="song-title">${s.title}</div>
+          <div class="song-sub">${s.sub}</div>
+        </div>
+        <button class="url-btn" onclick="openUrlModal(${i})">URL変更</button>
+      </div>`;
+    }
+    return `<a class="song-card" href="${s.url}" target="_blank" rel="noopener">
+      <div class="song-icon ${iconClass(currentTab)}">${s.icon}</div>
+      <div class="song-info">
+        <div class="song-title">${s.title}</div>
+        <div class="song-sub">${s.sub}</div>
+      </div>
+      <span class="song-arrow">▶</span>
+    </a>`;
+  }).join('');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['radio','karaoke','bgm'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  render();
+}
+
+function toggleEdit() {
+  editMode = !editMode;
+  document.getElementById('edit-toggle').textContent = editMode ? '完了' : '編集';
+  render();
+}
+
+function deleteSong(index) {
+  if (confirm('「' + data[currentTab][index].title + '」を削除しますか？')) {
+    data[currentTab].splice(index, 1);
+    save();
+    render();
+  }
+}
+
+let editingUrlIndex = -1;
+
+function openUrlModal(index) {
+  editingUrlIndex = index;
+  const s = data[currentTab][index];
+  document.getElementById('url-song-name').textContent = '「' + s.title + '」のURLを変更します';
+  document.getElementById('u-url').value = s.url;
+  document.getElementById('url-modal').classList.add('open');
+}
+
+function closeUrlModal() {
+  document.getElementById('url-modal').classList.remove('open');
+  editingUrlIndex = -1;
+}
+
+function handleUrlModalBgClick(e) {
+  if (e.target === document.getElementById('url-modal')) closeUrlModal();
+}
+
+function saveUrl() {
+  const url = document.getElementById('u-url').value.trim();
+  if (!url || !url.startsWith('http')) { alert('正しいURLを入力してください'); return; }
+  data[currentTab][editingUrlIndex].url = url;
+  save();
+  closeUrlModal();
+  render();
+}
+
+function openModal() {
+  document.getElementById('m-cat').value = currentTab;
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-sub').value = '';
+  document.getElementById('m-url').value = '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function handleModalBgClick(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+
+function saveSong() {
+  const cat   = document.getElementById('m-cat').value;
+  const title = document.getElementById('m-title').value.trim();
+  const sub   = document.getElementById('m-sub').value.trim();
+  const url   = document.getElementById('m-url').value.trim();
+  if (!title) { alert('曲名を入力してください'); return; }
+  if (!url || !url.startsWith('http')) { alert('YouTubeのURLを入力してください'); return; }
+  const icons = { radio: '🌅', karaoke: '🎤', bgm: '🎵' };
+  data[cat].push({ title, sub, url, icon: icons[cat] });
+  save();
+  closeModal();
+  if (cat !== currentTab) switchTab(cat);
+  else render();
+}
+
+function openExportModal() {
+  document.getElementById('export-text').value = JSON.stringify(data, null, 2);
+  document.getElementById('export-modal').classList.add('open');
+}
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+function copyToClipboard() {
+  const ta = document.getElementById('export-text');
+  ta.select();
+  try {
+    document.execCommand('copy');
+    alert('コピーしました。メモ帳などに貼り付けて保存してください。');
+  } catch(e) {
+    alert('コピーできませんでした。手動で選択してコピーしてください。');
+  }
+}
+
+function openImportModal() {
+  document.getElementById('import-text').value = '';
+  document.getElementById('import-modal').classList.add('open');
+}
+function closeImportModal() {
+  document.getElementById('import-modal').classList.remove('open');
+}
+function importFromText() {
+  const text = document.getElementById('import-text').value.trim();
+  if (!text) { alert('テキストを貼り付けてください'); return; }
+  try {
+    const imported = JSON.parse(text);
+    if (!imported.radio || !imported.karaoke || !imported.bgm) {
+      alert('正しいデータではありません。書き出したテキストをそのまま貼り付けてください。');
+      return;
+    }
+    if (confirm('現在のデータを上書きします。よろしいですか？')) {
+      data = imported;
+      save();
+      closeImportModal();
+      render();
+      alert('読み込みが完了しました。');
+    }
+  } catch(e) {
+    alert('読み込みに失敗しました。テキストが正しいか確認してください。');
+  }
+}
+
+render();
+</script>
+</body>
+</html>
