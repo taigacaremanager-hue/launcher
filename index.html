@@ -144,14 +144,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .song-sub {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .song-sub { display: none; }
 
   .song-arrow {
     color: var(--text-hint);
@@ -187,6 +180,26 @@
     cursor: pointer;
     flex-shrink: 0;
     white-space: nowrap;
+  }
+
+  /* YouTube検索ボタン */
+  .yt-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 12px 0;
+    padding: 14px;
+    background: #FF0000;
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: calc(100% - 24px);
+    -webkit-appearance: none;
+    font-family: inherit;
   }
 
   /* 追加ボタン */
@@ -356,6 +369,7 @@
 
   <div id="song-list" class="songs"></div>
 
+  <button class="yt-search-btn" onclick="window.open('https://www.youtube.com/results?search_query=カラオケ', '_blank')">🔍 YouTubeで曲を検索する</button>
   <button class="add-btn" onclick="openModal()">＋ 曲を追加する</button>
 
   <div class="data-btns">
